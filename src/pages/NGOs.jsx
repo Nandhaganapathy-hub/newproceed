@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useToast } from '../ToastContext'
 import { MapContainer, TileLayer, Marker, Popup, Polyline, Circle, createIcon, createHubIcon } from '../components/LeafletMap'
+import { syncNGOsToFirestore, upsertNGO, deleteNGO as deleteFirebaseNGO, subscribeToNGOs } from '../firebaseService'
 
 function ImpactMetric({ value, label, icon }) {
   return (
@@ -281,6 +282,11 @@ export default function NGOs() {
           data = await res2.json();
         }
         setPartners(data);
+
+        // 🔥 Sync NGO data to Firebase Firestore
+        syncNGOsToFirestore(data).then(() => {
+          console.log('🔥 NGOs synced to Firebase Firestore');
+        }).catch(() => {});
       } catch (e) {
         console.warn('Backend unavailable. Showing empty state.');
       } finally {
@@ -288,6 +294,14 @@ export default function NGOs() {
       }
     };
     loadData();
+  }, [])
+
+  // 🔥 Firebase real-time listener for cross-device NGO sync
+  useEffect(() => {
+    const unsubscribe = subscribeToNGOs((firebaseNGOs) => {
+      console.log('🔥 Firebase NGOs updated:', firebaseNGOs.length, 'partners');
+    });
+    return () => unsubscribe();
   }, [])
 
   // Fake hub origin
@@ -319,6 +333,8 @@ export default function NGOs() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'verified' })
       }).catch(() => {})
+      // Sync to Firebase
+      upsertNGO({ ...partner, status: 'verified' }).catch(() => {})
     }
     setPartners(prev => prev.map(p => p.name === partnerName ? { ...p, status: 'verified' } : p))
     addToast(`Successfully matched with ${partnerName}! Pickup coordination initiated.`, 'success')
@@ -353,10 +369,14 @@ export default function NGOs() {
       .then(res => res.json())
       .then(data => {
         setPartners(prev => [...prev, data])
+        // 🔥 Sync new partner to Firebase
+        upsertNGO(data).catch(() => {})
         addToast(`${form.name} added as a new partner!`, 'success')
       })
       .catch(() => {
         setPartners(prev => [...prev, form])
+        // Still push to Firebase even if Django is offline
+        upsertNGO(form).catch(() => {})
         addToast(`${form.name} added locally (backend offline).`, 'warning')
       })
     setShowAddModal(false)
@@ -367,6 +387,8 @@ export default function NGOs() {
     const partner = partners.find(p => p.name === partnerName)
     if (partner?.id) {
       fetch(`http://127.0.0.1:8000/api/ngos/${partner.id}/`, { method: 'DELETE' }).catch(() => {})
+      // 🔥 Remove from Firebase too
+      deleteFirebaseNGO(partner.id).catch(() => {})
     }
     setPartners(prev => prev.filter(p => p.name !== partnerName))
     setMatchedPartners(prev => {

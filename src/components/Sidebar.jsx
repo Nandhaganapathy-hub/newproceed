@@ -14,11 +14,30 @@ const navItems = [
 export default function Sidebar({ mobileOpen, setMobileOpen }) {
   const [collapsed, setCollapsed] = useState(false)
   const location = useLocation()
+  const [efficiency, setEfficiency] = useState(82)
 
   // Close mobile sidebar on route change
   useEffect(() => {
     if (mobileOpen) setMobileOpen(false)
   }, [location.pathname])
+
+  // Simulate real-time efficiency API
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setEfficiency(prev => {
+        const variation = Math.floor(Math.random() * 9) - 4; // -4 to +4
+        let newValue = prev + variation;
+        if (newValue > 99) newValue = 99;
+        if (newValue < 60) newValue = 60;
+        return newValue;
+      })
+    }, 2000); // Faster updates
+    return () => clearInterval(interval);
+  }, [])
+
+  const forceRegenerate = () => {
+    setEfficiency(Math.floor(Math.random() * 30) + 65);
+  };
 
   return (
     <aside className={`
@@ -80,20 +99,24 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
       {/* Footer */}
       <div className="p-4 space-y-4">
         {/* Efficiency Ring */}
-        <div className="flex flex-col items-center gap-1">
+        <div 
+          onClick={forceRegenerate}
+          className="flex flex-col items-center gap-1 cursor-pointer active:scale-95 transition-transform group"
+          title="Click to regenerate AI prediction"
+        >
           <div className="relative w-16 h-16">
             <svg viewBox="0 0 80 80" className="w-full h-full -rotate-90">
-              <circle cx="40" cy="40" r="34" fill="none" stroke="currentColor" strokeWidth="4" className="text-surface-container-high" />
+              <circle cx="40" cy="40" r="34" fill="none" stroke="currentColor" strokeWidth="4" className="text-surface-container-high group-hover:text-surface-container-highest transition-colors" />
               <circle cx="40" cy="40" r="34" fill="none" stroke="currentColor" strokeWidth="4"
-                className="text-primary ring-animate"
+                className="text-primary transition-all duration-1000 ease-out group-hover:brightness-110"
                 strokeDasharray="213.6"
-                strokeDashoffset="38.4"
+                strokeDashoffset={213.6 - (213.6 * efficiency) / 100}
                 strokeLinecap="round"
               />
             </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-on-surface">82%</span>
+            <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-on-surface group-hover:text-primary transition-colors">{efficiency}%</span>
           </div>
-          {!collapsed && <p className="text-[0.625rem] text-on-surface-variant uppercase tracking-wider">Carbon Positive</p>}
+          {!collapsed && <p className="text-[0.625rem] text-on-surface-variant uppercase tracking-wider group-hover:text-on-surface transition-colors">Carbon Positive</p>}
         </div>
 
         {/* Theme Toggle */}

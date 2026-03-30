@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, Polyline, createIcon, createHubIcon, createVehicleIcon } from '../components/LeafletMap'
+import { updateDashboardStats, addActivityLog } from '../firebaseService'
 
 function StatCard({ icon, label, value, subtext, accent = false, onClick }) {
   return (
@@ -52,14 +53,15 @@ function PredictionChart() {
   )
 }
 
-function DishSurplus() {
-  const dishes = [
+function DishSurplus({ searchQuery = '' }) {
+  const allDishes = [
     { name: 'Paneer Curry', surplus: 12, unit: 'kg', risk: 'low' },
     { name: 'Rice Biryani', surplus: 8, unit: 'kg', risk: 'medium' },
     { name: 'Dal Makhani', surplus: 5, unit: 'kg', risk: 'low' },
     { name: 'Fresh Salad', surplus: 18, unit: 'kg', risk: 'high' },
     { name: 'Butter Naan', surplus: 2, unit: 'kg', risk: 'low' },
   ]
+  const dishes = allDishes.filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase()))
   const riskColors = { low: 'bg-primary/10 text-primary', medium: 'bg-secondary/10 text-secondary', high: 'bg-tertiary-container text-on-tertiary-container' }
 
   return (
@@ -72,20 +74,24 @@ function DishSurplus() {
         <span className="material-symbols-outlined text-on-surface-variant text-xl">restaurant</span>
       </div>
       <div className="space-y-3">
-        {dishes.map(d => (
-          <div key={d.name} className="flex items-center justify-between py-2">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center">
-                <span className="material-symbols-outlined text-sm text-on-surface-variant">lunch_dining</span>
+        {dishes.length === 0 ? (
+          <p className="text-sm text-on-surface-variant">No dishes match "{searchQuery}"</p>
+        ) : (
+          dishes.map(d => (
+            <div key={d.name} className="flex items-center justify-between py-2">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center">
+                  <span className="material-symbols-outlined text-sm text-on-surface-variant">lunch_dining</span>
+                </div>
+                <span className="text-sm font-medium text-on-surface">{d.name}</span>
               </div>
-              <span className="text-sm font-medium text-on-surface">{d.name}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-bold text-on-surface">{d.surplus}{d.unit}</span>
+                <span className={`text-[0.625rem] uppercase font-bold px-2 py-0.5 rounded-full ${riskColors[d.risk]}`}>{d.risk}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-bold text-on-surface">{d.surplus}{d.unit}</span>
-              <span className={`text-[0.625rem] uppercase font-bold px-2 py-0.5 rounded-full ${riskColors[d.risk]}`}>{d.risk}</span>
-            </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   )
@@ -168,29 +174,34 @@ function VerificationSteps() {
   )
 }
 
-function NGOAlerts() {
-  const alerts = [
+function NGOAlerts({ searchQuery = '' }) {
+  const allAlerts = [
     { name: 'Hope Foundation', status: 'Confirmed', time: '12m ago', color: 'bg-primary' },
     { name: 'Green Kitchen', status: 'No Response', time: 'Sent 45m ago', color: 'bg-tertiary' },
     { name: 'Social Bread', status: 'Confirmed', time: '2h ago', color: 'bg-primary' },
   ]
+  const alerts = allAlerts.filter(a => a.name.toLowerCase().includes(searchQuery.toLowerCase()))
 
   return (
     <div className="bg-surface-container-lowest rounded-xl p-6 ghost-border">
       <h3 className="text-base font-bold text-on-surface mb-4">NGO Alerts</h3>
       <div className="space-y-3">
-        {alerts.map((a, i) => (
-          <div key={i} className="flex items-center justify-between py-2">
-            <div className="flex items-center gap-3">
-              <div className={`w-2 h-2 rounded-full ${a.color}`} />
-              <div>
-                <p className="text-sm font-medium text-on-surface">{a.name}</p>
-                <p className="text-xs text-on-surface-variant">{a.status} • {a.time}</p>
+        {alerts.length === 0 ? (
+          <p className="text-sm text-on-surface-variant">No alerts match "{searchQuery}"</p>
+        ) : (
+          alerts.map((a, i) => (
+            <div key={i} className="flex items-center justify-between py-2">
+              <div className="flex items-center gap-3">
+                <div className={`w-2 h-2 rounded-full ${a.color}`} />
+                <div>
+                  <p className="text-sm font-medium text-on-surface">{a.name}</p>
+                  <p className="text-xs text-on-surface-variant">{a.status} • {a.time}</p>
+                </div>
               </div>
+              <span className="material-symbols-outlined text-on-surface-variant text-lg">chevron_right</span>
             </div>
-            <span className="material-symbols-outlined text-on-surface-variant text-lg">chevron_right</span>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   )
@@ -200,9 +211,26 @@ import { useNavigate } from 'react-router-dom'
 
 export default function Dashboard() {
   const [loaded, setLoaded] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [notifications, setNotifications] = useState([
+    { id: 1, text: 'New NGO "Hope Foundation" joined the network.', time: '12m ago', icon: 'handshake' },
+    { id: 2, text: 'ML Predictor: 45kg surplus estimated for dinner.', time: '1h ago', icon: 'auto_awesome' },
+    { id: 3, text: 'Alert: 3 logistics routes optimized for efficiency.', time: '2h ago', icon: 'route' },
+  ])
   const navigate = useNavigate()
   
-  useEffect(() => { setLoaded(true) }, [])
+  useEffect(() => {
+    setLoaded(true)
+    // 🔥 Push live dashboard stats to Firebase
+    updateDashboardStats({
+      predicted_footfall: 1450,
+      estimated_surplus_kg: 45,
+      ngo_matched: 3,
+      meals_saved: 90,
+      status: 'operational',
+    }).catch(() => {})
+  }, [])
 
   return (
     <div className={`p-8 max-w-[1400px] mx-auto transition-all duration-500 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}>
@@ -215,12 +243,71 @@ export default function Dashboard() {
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <div className="flex items-center gap-2 bg-surface-container-lowest rounded-xl px-4 py-2.5 ghost-border shrink-0">
             <span className="material-symbols-outlined text-on-surface-variant text-lg">search</span>
-            <input type="text" placeholder="Search operations..." className="bg-transparent text-sm text-on-surface outline-none w-full sm:w-48 placeholder:text-on-surface-variant/50" />
+            <input 
+              type="text" 
+              placeholder="Search dishes, NGOs..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-transparent text-sm text-on-surface outline-none w-full sm:w-48 placeholder:text-on-surface-variant/50" 
+            />
           </div>
-          <button className="relative p-2.5 rounded-xl bg-surface-container-lowest ghost-border hover:bg-surface-container-high transition-colors hidden md:block shrink-0">
-            <span className="material-symbols-outlined text-on-surface-variant text-xl">notifications</span>
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-tertiary rounded-full" />
-          </button>
+          <div className="relative">
+            <button 
+              onClick={() => setShowNotifications(!showNotifications)}
+              className={`p-2.5 rounded-xl bg-surface-container-lowest ghost-border transition-colors z-10 ${showNotifications ? 'bg-surface-container-high' : 'hover:bg-surface-container-high'}`}
+            >
+              <span className="material-symbols-outlined text-on-surface-variant text-xl">notifications</span>
+              {notifications.length > 0 && <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-tertiary border-2 border-surface-container-lowest rounded-full" />}
+            </button>
+
+            {/* Notification Dropdown */}
+            {showNotifications && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
+                <div className="absolute right-0 mt-3 w-80 bg-surface-container-lowest rounded-2xl shadow-2xl z-50 ghost-border overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="p-4 border-b border-surface-container flex items-center justify-between bg-surface-container-low">
+                    <h3 className="font-bold text-sm text-on-surface">Notifications</h3>
+                    <button 
+                      onClick={() => setNotifications([])}
+                      className="text-[0.625rem] text-primary font-bold uppercase tracking-wider hover:opacity-70 transition-opacity"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                  <div className="max-h-[320px] overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="p-8 text-center">
+                        <span className="material-symbols-outlined text-on-surface-variant/30 text-4xl mb-2">notifications_off</span>
+                        <p className="text-xs text-on-surface-variant font-medium">No new notifications</p>
+                      </div>
+                    ) : (
+                      notifications.map(n => (
+                        <div key={n.id} className="p-4 border-b border-surface-container/50 hover:bg-surface-container transition-colors cursor-pointer group">
+                          <div className="flex gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                              <span className="material-symbols-outlined text-primary text-sm">{n.icon}</span>
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-xs text-on-surface leading-normal group-hover:text-primary transition-colors">{n.text}</p>
+                              <p className="text-[0.625rem] text-on-surface-variant mt-1 font-medium">{n.time}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  {notifications.length > 0 && (
+                    <button 
+                      onClick={() => navigate('/alerts')}
+                      className="w-full p-3 text-center text-xs font-bold text-on-surface-variant hover:bg-surface-container transition-colors border-t border-surface-container/50"
+                    >
+                      View All Alerts
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -235,14 +322,14 @@ export default function Dashboard() {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
         <PredictionChart />
-        <DishSurplus />
+        <DishSurplus searchQuery={searchQuery} />
       </div>
 
       {/* Bottom Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         <ProximityMap />
         <VerificationSteps />
-        <NGOAlerts />
+        <NGOAlerts searchQuery={searchQuery} />
       </div>
     </div>
   )

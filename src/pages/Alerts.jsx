@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '../ToastContext'
+import { subscribeToAlerts, addAlert as addFirebaseAlert, deleteAlert as deleteFirebaseAlert } from '../firebaseService'
 
 function AlertCard({ id, type, icon, title, description, time, actions, onAction }) {
   const [dismissed, setDismissed] = useState(false)
@@ -147,7 +148,7 @@ export default function Alerts() {
     { id: 'i2', type: 'info', icon: 'cloud_done', title: 'Backup Complete', description: 'Nightly database backup completed successfully. 42MB archived.', time: '6h ago' },
   ])
 
-  // Fetch initial alerts
+  // Fetch initial alerts from Django & sync to Firebase
   useEffect(() => {
     const fetchAlerts = async () => {
       try {
@@ -168,6 +169,18 @@ export default function Alerts() {
           data = await (await fetch('http://127.0.0.1:8000/api/alerts/')).json();
         }
 
+        // Sync Django alerts to Firebase Firestore
+        for (const alert of data) {
+          addFirebaseAlert({
+            alert_type: alert.alert_type,
+            icon: alert.icon,
+            title: alert.title,
+            description: alert.description,
+            has_actions: alert.has_actions,
+            source: 'django_sync',
+          }).catch(() => {});
+        }
+
         setCriticalAlerts(data.filter(a => a.alert_type === 'critical').map((a, i) => ({
           ...a, id: a.id || `c${i}`, type: a.alert_type, time: 'Recent',
           actions: a.has_actions ? ['Assign NGO', 'Dismiss'] : null,
@@ -176,12 +189,20 @@ export default function Alerts() {
           ...a, id: a.id || `w${i}`, type: a.alert_type, time: 'Recent',
         })));
       } catch (e) {
-        console.warn('Backend unavailable.');
+        console.warn('Backend unavailable, using Firebase only.');
       } finally {
         setLoaded(true);
       }
     };
     fetchAlerts();
+  }, [])
+
+  // 🔥 Firebase real-time listener for live cross-device sync
+  useEffect(() => {
+    const unsubscribe = subscribeToAlerts((firebaseAlerts) => {
+      console.log('🔥 Firebase alerts updated:', firebaseAlerts.length, 'alerts');
+    });
+    return () => unsubscribe();
   }, [])
 
   // Live Alert Simulation Engine
@@ -207,11 +228,15 @@ export default function Alerts() {
         has_actions: !!alert.actions
       };
 
+      // Push to Django backend
       fetch('http://127.0.0.1:8000/api/alerts/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       }).catch(() => {});
+
+      // Push to Firebase Firestore for real-time sync
+      addFirebaseAlert({ ...payload, source: 'live_simulation' }).catch(() => {});
 
       if (alert.type === 'critical') {
         setCriticalAlerts(prev => [alert, ...prev]);

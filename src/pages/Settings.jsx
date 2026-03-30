@@ -27,13 +27,9 @@ function SettingsSection({ icon, title, children, defaultOpen = false }) {
   )
 }
 
-function ToggleSwitch({ label, description, defaultChecked = false, onChange }) {
-  const [checked, setChecked] = useState(defaultChecked)
-
+function ToggleSwitch({ label, description, checked, onChange }) {
   const toggle = () => {
-    const next = !checked
-    setChecked(next)
-    onChange?.(next)
+    onChange?.(!checked)
   }
 
   return (
@@ -53,10 +49,7 @@ function ToggleSwitch({ label, description, defaultChecked = false, onChange }) 
 }
 
 function InputField({ label, value, type = 'text', placeholder, onChange }) {
-  const [val, setVal] = useState(value || '')
-
   const handleChange = (e) => {
-    setVal(e.target.value)
     onChange?.(e.target.value)
   }
 
@@ -66,7 +59,7 @@ function InputField({ label, value, type = 'text', placeholder, onChange }) {
       <div className="mt-1.5 relative">
         <input
           type={type}
-          value={val}
+          value={value}
           onChange={handleChange}
           placeholder={placeholder}
           className="w-full bg-surface-container-low rounded-xl px-4 py-2.5 text-sm text-on-surface outline-none border-b-2 border-transparent focus:border-primary focus:bg-surface-container-lowest transition-all placeholder:text-on-surface-variant/40"
@@ -76,11 +69,8 @@ function InputField({ label, value, type = 'text', placeholder, onChange }) {
   )
 }
 
-function SelectField({ label, options, defaultValue, onChange }) {
-  const [val, setVal] = useState(defaultValue || options[0])
-
+function SelectField({ label, options, value, onChange }) {
   const handleChange = (e) => {
-    setVal(e.target.value)
     onChange?.(e.target.value)
   }
 
@@ -88,7 +78,7 @@ function SelectField({ label, options, defaultValue, onChange }) {
     <div className="py-3">
       <label className="text-[0.6875rem] uppercase tracking-wider text-on-surface-variant font-medium">{label}</label>
       <select
-        value={val}
+        value={value}
         onChange={handleChange}
         className="mt-1.5 w-full bg-surface-container-low rounded-xl px-4 py-2.5 text-sm text-on-surface outline-none border-b-2 border-transparent focus:border-primary focus:bg-surface-container-lowest transition-all appearance-none cursor-pointer"
       >
@@ -135,14 +125,64 @@ export default function Settings() {
   const [avatarInitials, setAvatarInitials] = useState('AR')
   const [hasChanges, setHasChanges] = useState(false)
   const { addToast } = useToast() || { addToast: () => {} }
+  
+  const [prefsId, setPrefsId] = useState(null)
+  const [prefs, setPrefs] = useState({
+    full_name: 'Alex Rivera', email: 'alex.rivera@ledger.org', phone: '+1 (555) 042-1988', role: 'Canteen Manager',
+    surplus_threshold: '25kg (Standard)', prediction_model: 'Neural V4.2 (Recommended)', auto_redistribution: true, real_time_sensor_sync: true, predictive_route_optimization: false,
+    email_notifications: true, sms_alerts: false, push_notifications: true, ngo_broadcasts: true
+  })
 
-  useEffect(() => { setLoaded(true) }, [])
+  useEffect(() => {
+    const fetchPrefs = async () => {
+      try {
+        const res = await fetch('http://127.0.0.1:8000/api/preferences/');
+        if (!res.ok) throw new Error();
+        let data = await res.json();
+        
+        if (data.length === 0) {
+          const defaultPrefs = { ...prefs };
+          const postRes = await fetch('http://127.0.0.1:8000/api/preferences/', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(defaultPrefs)
+          });
+          const created = await postRes.json();
+          setPrefs(created);
+          setPrefsId(created.id);
+        } else {
+          setPrefs(data[0]);
+          setPrefsId(data[0].id);
+        }
+      } catch (e) {
+        console.warn('Backend unavailable for preferences.');
+      } finally {
+        setLoaded(true);
+      }
+    };
+    fetchPrefs();
+  }, [])
 
-  const markChanged = () => setHasChanges(true)
+  const updatePref = (key, value) => {
+    setPrefs(prev => ({ ...prev, [key]: value }))
+    setHasChanges(true)
+  }
 
-  const handleSave = () => {
-    setHasChanges(false)
-    addToast('Preferences saved successfully!', 'success')
+  const handleSave = async () => {
+    if (prefsId) {
+      try {
+        await fetch(`http://127.0.0.1:8000/api/preferences/${prefsId}/`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(prefs)
+        });
+        addToast('Preferences saved successfully!', 'success');
+        setHasChanges(false);
+      } catch (e) {
+        addToast('Failed to save preferences to backend.', 'error');
+      }
+    } else {
+      setHasChanges(false)
+      addToast('Preferences saved locally!', 'success')
+    }
   }
 
   const handleDiscard = () => {
@@ -400,10 +440,10 @@ export default function Settings() {
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
-              <InputField label="Full Name" value="Alex Rivera" onChange={markChanged} />
-              <InputField label="Email" value="alex.rivera@ledger.org" type="email" onChange={markChanged} />
-              <InputField label="Phone" value="+1 (555) 042-1988" type="tel" onChange={markChanged} />
-              <SelectField label="Role" options={['Canteen Manager', 'Fleet Coordinator', 'Admin', 'Observer']} onChange={markChanged} />
+              <InputField label="Full Name" value={prefs.full_name} onChange={v => updatePref('full_name', v)} />
+              <InputField label="Email" value={prefs.email} type="email" onChange={v => updatePref('email', v)} />
+              <InputField label="Phone" value={prefs.phone} type="tel" onChange={v => updatePref('phone', v)} />
+              <SelectField label="Role" value={prefs.role} options={['Canteen Manager', 'Fleet Coordinator', 'Admin', 'Observer']} onChange={v => updatePref('role', v)} />
             </div>
           </SettingsSection>
 
@@ -431,20 +471,20 @@ export default function Settings() {
 
           <SettingsSection icon="settings_input_component" title="System Parameters">
             <div className="space-y-1">
-              <SelectField label="Surplus Threshold" options={['10kg (Aggressive)', '25kg (Standard)', '50kg (Conservative)']} defaultValue="25kg (Standard)" onChange={markChanged} />
-              <SelectField label="Prediction Model" options={['Neural V4.2 (Recommended)', 'Neural V3.8', 'Statistical Baseline']} onChange={markChanged} />
-              <ToggleSwitch label="Auto-Redistribution" description="Automatically assign surplus to nearest NGO" defaultChecked={true} onChange={markChanged} />
-              <ToggleSwitch label="Real-time Sensor Sync" description="Continuous cold-chain monitoring integration" defaultChecked={true} onChange={markChanged} />
-              <ToggleSwitch label="Predictive Route Optimization" description="AI-driven fleet routing adjustments" defaultChecked={false} onChange={markChanged} />
+              <SelectField label="Surplus Threshold" options={['10kg (Aggressive)', '25kg (Standard)', '50kg (Conservative)']} value={prefs.surplus_threshold} onChange={v => updatePref('surplus_threshold', v)} />
+              <SelectField label="Prediction Model" options={['Neural V4.2 (Recommended)', 'Neural V3.8', 'Statistical Baseline']} value={prefs.prediction_model} onChange={v => updatePref('prediction_model', v)} />
+              <ToggleSwitch label="Auto-Redistribution" description="Automatically assign surplus to nearest NGO" checked={prefs.auto_redistribution} onChange={v => updatePref('auto_redistribution', v)} />
+              <ToggleSwitch label="Real-time Sensor Sync" description="Continuous cold-chain monitoring integration" checked={prefs.real_time_sensor_sync} onChange={v => updatePref('real_time_sensor_sync', v)} />
+              <ToggleSwitch label="Predictive Route Optimization" description="AI-driven fleet routing adjustments" checked={prefs.predictive_route_optimization} onChange={v => updatePref('predictive_route_optimization', v)} />
             </div>
           </SettingsSection>
 
           <SettingsSection icon="notifications_active" title="Communication Channels">
             <div className="space-y-1">
-              <ToggleSwitch label="Email Notifications" description="Receive alerts via email" defaultChecked={true} onChange={markChanged} />
-              <ToggleSwitch label="SMS Alerts" description="Critical notifications via text message" defaultChecked={false} onChange={markChanged} />
-              <ToggleSwitch label="In-App Push Notifications" description="Browser push notifications for live updates" defaultChecked={true} onChange={markChanged} />
-              <ToggleSwitch label="NGO Partner Broadcasts" description="Automated surplus notifications to partner network" defaultChecked={true} onChange={markChanged} />
+              <ToggleSwitch label="Email Notifications" description="Receive alerts via email" checked={prefs.email_notifications} onChange={v => updatePref('email_notifications', v)} />
+              <ToggleSwitch label="SMS Alerts" description="Critical notifications via text message" checked={prefs.sms_alerts} onChange={v => updatePref('sms_alerts', v)} />
+              <ToggleSwitch label="In-App Push Notifications" description="Browser push notifications for live updates" checked={prefs.push_notifications} onChange={v => updatePref('push_notifications', v)} />
+              <ToggleSwitch label="NGO Partner Broadcasts" description="Automated surplus notifications to partner network" checked={prefs.ngo_broadcasts} onChange={v => updatePref('ngo_broadcasts', v)} />
             </div>
           </SettingsSection>
 
