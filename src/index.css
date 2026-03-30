@@ -1,0 +1,236 @@
+@import "tailwindcss";
+
+:root {
+  --color-surface-val: #f7fbf0;
+  --color-surface-dim-val: #d7dbd2;
+  --color-surface-bright-val: #f7fbf0;
+  --color-surface-container-val: #ebefe5;
+  --color-surface-container-high-val: #e5eadf;
+  --color-surface-container-highest-val: #e0e4da;
+  --color-surface-container-low-val: #f1f5eb;
+  --color-surface-container-lowest-val: #ffffff;
+
+  --color-primary-val: #0d631b;
+  --color-primary-container-val: #2e7d32;
+  --color-primary-fixed-val: #a3f69c;
+  --color-primary-fixed-dim-val: #88d982;
+  --color-on-primary-val: #ffffff;
+  --color-on-primary-container-val: #cbffc2;
+  --color-on-surface-val: #181d17;
+  --color-on-surface-variant-val: #40493d;
+
+  --color-secondary-val: #005db7;
+  --color-secondary-container-val: #64a1ff;
+  --color-secondary-fixed-val: #d6e3ff;
+  --color-on-secondary-val: #ffffff;
+
+  --color-tertiary-val: #8e3d00;
+  --color-tertiary-container-val: #b45000;
+  --color-tertiary-fixed-val: #ffdbca;
+  --color-tertiary-fixed-dim-val: #ffb68f;
+  --color-on-tertiary-container-val: #ffeee6;
+
+  --color-error-val: #ba1a1a;
+  --color-error-container-val: #ffdad6;
+
+  --color-outline-val: #707a6c;
+  --color-outline-variant-val: #bfcaba;
+
+  --color-inverse-surface-val: #2d322b;
+  --color-inverse-on-surface-val: #eef2e8;
+  --color-inverse-primary-val: #88d982;
+}
+
+.dark {
+  --color-surface-val: #121212;
+  --color-surface-dim-val: #121212;
+  --color-surface-bright-val: #373a33;
+  --color-surface-container-val: #1a1a1a;
+  --color-surface-container-high-val: #242424;
+  --color-surface-container-highest-val: #2c2c2c;
+  --color-surface-container-low-val: #161616;
+  --color-surface-container-lowest-val: #121212;
+
+  --color-primary-val: #88d982;
+  --color-primary-container-val: #005315;
+  --color-primary-fixed-val: #a3f69c;
+  --color-primary-fixed-dim-val: #88d982;
+  --color-on-primary-val: #00390a;
+  --color-on-primary-container-val: #a3f69c;
+  --color-on-surface-val: #e0e4da;
+  --color-on-surface-variant-val: #bfcaba;
+
+  --color-secondary-val: #a8c8ff;
+  --color-secondary-container-val: #00458e;
+  --color-secondary-fixed-val: #d6e3ff;
+  --color-on-secondary-val: #003064;
+
+  --color-tertiary-val: #ffb68f;
+  --color-tertiary-container-val: #6a2b00;
+  --color-tertiary-fixed-val: #ffdbca;
+  --color-tertiary-fixed-dim-val: #ffb68f;
+  --color-on-tertiary-container-val: #ffdbca;
+
+  --color-error-val: #ffb4ab;
+  --color-error-container-val: #93000a;
+
+  --color-outline-val: #8c9388;
+  --color-outline-variant-val: #424940;
+
+  --color-inverse-surface-val: #e0e4da;
+  --color-inverse-on-surface-val: #191c16;
+  --color-inverse-primary-val: #226118;
+}
+
+@theme {
+  /* Living Ledger Design Tokens (Mapped) */
+  --color-surface: var(--color-surface-val);
+  --color-surface-dim: var(--color-surface-dim-val);
+  --color-surface-bright: var(--color-surface-bright-val);
+  --color-surface-container: var(--color-surface-container-val);
+  --color-surface-container-high: var(--color-surface-container-high-val);
+  --color-surface-container-highest: var(--color-surface-container-highest-val);
+  --color-surface-container-low: var(--color-surface-container-low-val);
+  --color-surface-container-lowest: var(--color-surface-container-lowest-val);
+
+  --color-primary: var(--color-primary-val);
+  --color-primary-container: var(--color-primary-container-val);
+  --color-primary-fixed: var(--color-primary-fixed-val);
+  --color-primary-fixed-dim: var(--color-primary-fixed-dim-val);
+  --color-on-primary: var(--color-on-primary-val);
+  --color-on-primary-container: var(--color-on-primary-container-val);
+  --color-on-surface: var(--color-on-surface-val);
+  --color-on-surface-variant: var(--color-on-surface-variant-val);
+
+  --color-secondary: var(--color-secondary-val);
+  --color-secondary-container: var(--color-secondary-container-val);
+  --color-secondary-fixed: var(--color-secondary-fixed-val);
+  --color-on-secondary: var(--color-on-secondary-val);
+
+  --color-tertiary: var(--color-tertiary-val);
+  --color-tertiary-container: var(--color-tertiary-container-val);
+  --color-tertiary-fixed: var(--color-tertiary-fixed-val);
+  --color-tertiary-fixed-dim: var(--color-tertiary-fixed-dim-val);
+  --color-on-tertiary-container: var(--color-on-tertiary-container-val);
+
+  --color-error: var(--color-error-val);
+  --color-error-container: var(--color-error-container-val);
+
+  --color-outline: var(--color-outline-val);
+  --color-outline-variant: var(--color-outline-variant-val);
+
+  --color-inverse-surface: var(--color-inverse-surface-val);
+  --color-inverse-on-surface: var(--color-inverse-on-surface-val);
+  --color-inverse-primary: var(--color-inverse-primary-val);
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+/* Global resets & base */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-surface);
+  color: var(--color-on-surface);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Global smooth transition for theme switching */
+body * {
+  transition-property: background-color, border-color, color, box-shadow;
+  transition-duration: 0.3s;
+  transition-timing-function: ease-in-out;
+}
+
+/* Base button and card styles for modernization */
+button, a, [role="button"] {
+  cursor: pointer !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+button:active, a:active {
+  transform: scale(0.96) !important;
+}
+
+.ghost-border {
+  border: 1px solid color-mix(in srgb, var(--color-outline-variant-val) 15%, transparent);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05); /* subtle shadow */
+}
+
+/* Leaflet map overrides */
+.leaflet-container {
+  border-radius: 0.75rem;
+  z-index: 1;
+}
+.custom-marker {
+  background: none !important;
+  border: none !important;
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+}
+.leaflet-popup-tip {
+  box-shadow: none !important;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-outline-variant);
+  border-radius: 999px;
+}
+
+/* Sidebar ring animation */
+@keyframes ringDraw {
+  from { stroke-dashoffset: 213.6; }
+  to { stroke-dashoffset: 38.4; }
+}
+
+.ring-animate {
+  animation: ringDraw 1.5s ease-out forwards;
+}
+
+/* Smooth page transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateY(12px);
+}
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+/* Glass effect utility */
+.glass {
+  background: color-mix(in srgb, var(--color-surface-container-highest-val) 80%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* Ghost border utility */
+.ghost-border {
+  border: 1px solid color-mix(in srgb, var(--color-outline-variant-val) 15%, transparent);
+}
+
+/* Gradient primary button */
+.btn-primary-gradient {
+  background: linear-gradient(135deg, var(--color-primary-val), var(--color-primary-container-val));
+}
+.btn-primary-gradient:hover {
+  background: linear-gradient(315deg, var(--color-primary-val), var(--color-primary-container-val));
+}
