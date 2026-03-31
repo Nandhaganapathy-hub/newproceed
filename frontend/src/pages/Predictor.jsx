@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useToast } from '../ToastContext'
+import { API_BASE_URL } from '../api/config'
 
-const API = 'http://127.0.0.1:8000/api'
+const API = `${API_BASE_URL}/api`
 
 function SuggestionBanner({ suggestions }) {
   const [dismissed, setDismissed] = useState(new Set())

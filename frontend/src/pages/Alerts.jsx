@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '../ToastContext'
+import { API_BASE_URL } from '../api/config'
 import { subscribeToAlerts, addAlert as addFirebaseAlert, deleteAlert as deleteFirebaseAlert } from '../firebaseService'
 
 function AlertCard({ id, type, icon, title, description, time, actions, onAction }) {

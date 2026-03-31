@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useToast } from '../ToastContext'
+import { API_BASE_URL } from '../api/config'
 import { MapContainer, TileLayer, Marker, Popup, Polyline, Circle, createIcon, createHubIcon } from '../components/LeafletMap'
 import { syncNGOsToFirestore, upsertNGO, deleteNGO as deleteFirebaseNGO, subscribeToNGOs } from '../firebaseService'
 
@@ -263,7 +264,7 @@ export default function NGOs() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/ngos/');
+        const res = await fetch(`${API_BASE_URL}/api/ngos/`);
         if (!res.ok) throw new Error('Network error');
         let data = await res.json();
 
@@ -274,11 +275,11 @@ export default function NGOs() {
             { name: 'Unity Kitchen', description: 'Hot meal program for shelters', frequency: 'TBD', status: 'new', lat: 40.73, lng: -73.99, capacity: 90, reliability: 70, foodType: 'Prepared' },
           ];
           for (let m of mocks) {
-            await fetch('http://127.0.0.1:8000/api/ngos/', {
+            await fetch(`${API_BASE_URL}/api/ngos/`, {
               method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(m)
             });
           }
-          const res2 = await fetch('http://127.0.0.1:8000/api/ngos/');
+          const res2 = await fetch(`${API_BASE_URL}/api/ngos/`);
           data = await res2.json();
         }
         setPartners(data);

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useToast } from '../ToastContext'
+import { API_BASE_URL } from '../api/config'
 
 function SettingsSection({ icon, title, children, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen)
@@ -136,13 +137,13 @@ export default function Settings() {
   useEffect(() => {
     const fetchPrefs = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/preferences/');
+        const res = await fetch(`${API_BASE_URL}/api/preferences/`);
         if (!res.ok) throw new Error();
         let data = await res.json();
         
         if (data.length === 0) {
           const defaultPrefs = { ...prefs };
-          const postRes = await fetch('http://127.0.0.1:8000/api/preferences/', {
+          const postRes = await fetch(`${API_BASE_URL}/api/preferences/`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(defaultPrefs)
           });
           const created = await postRes.json();
@@ -169,7 +170,7 @@ export default function Settings() {
   const handleSave = async () => {
     if (prefsId) {
       try {
-        await fetch(`http://127.0.0.1:8000/api/preferences/${prefsId}/`, {
+        await fetch(`${API_BASE_URL}/api/preferences/${prefsId}/`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(prefs)
