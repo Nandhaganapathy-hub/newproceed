@@ -9,7 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this')
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-# 🌐 Allowed Hosts (Render fix)
+# 🌐 Allowed Hosts
 ALLOWED_HOSTS = config(
     'ALLOWED_HOSTS',
     default='.onrender.com'
@@ -29,13 +29,11 @@ INSTALLED_APPS = [
     'api',
 ]
 
-# ⚙️ Middleware (order fixed)
+# ⚙️ Middleware (FIXED ORDER ✅)
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',   # 🔥 MUST BE FIRST
     'django.middleware.security.SecurityMiddleware',
-
     'whitenoise.middleware.WhiteNoiseMiddleware',
-
-    'corsheaders.middleware.CorsMiddleware',
 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -68,9 +66,7 @@ TEMPLATES = [
 # 🚀 WSGI
 WSGI_APPLICATION = 'ledger_backend.wsgi.application'
 
-# 🛢️ Database (Render PostgreSQL ready)
-# 🛢️ Database (FIXED ✅)
-
+# 🛢️ Database
 DATABASE_URL = config('DATABASE_URL', default=None)
 
 if DATABASE_URL:
@@ -103,29 +99,24 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# 📁 Static Files (IMPORTANT)
+# 📁 Static Files
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# 🌐 CORS (Frontend connect fix)
-CORS_ALLOWED_ORIGINS = config(
-    'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:5173'
-).split(',')
+# 🌐 CORS (🔥 FINAL FIX)
+CORS_ALLOW_ALL_ORIGINS = True
 
-CORS_ALLOW_ALL_ORIGINS = config(
-    'CORS_ALLOW_ALL_ORIGINS',
-    default=False,
-    cast=bool
-)
+CORS_ALLOW_HEADERS = [
+    "content-type",
+    "authorization",
+]
 
-# 🔐 CSRF (Render fix for frontend)
-CSRF_TRUSTED_ORIGINS = config(
-    'CSRF_TRUSTED_ORIGINS',
-    default='https://*.onrender.com'
-).split(',')
+# 🔐 CSRF (Render)
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.onrender.com",
+]
 
 # ⚡ Security (Production)
 if not DEBUG:
